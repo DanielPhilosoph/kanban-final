@@ -1,0 +1,238 @@
+/* Header */
+/* ======= */
+header{
+    text-align: center;
+    font-size: 38px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: black;
+}
+
+/* Html Divs */
+/* ========= */
+.main-div{    
+    text-align: center;
+}
+.head-div{
+    text-align: center;
+    width: 100%;
+}
+.section-div{    
+    display: inline-grid;
+    width: 30%;        
+    border: 2px solid black;
+    margin-top: 2%;
+}
+.search_div{
+    width: 100%;
+    text-align: center;
+}
+.droppable-div{
+    margin-right: 8%;
+    height: 10px;
+}
+.droppable-hovered{
+    background-color: cornflowerblue;
+}
+.input-div{
+    margin-top: 5px;
+    width: 100%;
+}
+
+/* Inputs */
+/* ====== */
+.edit-input{
+    width: 90%;
+    padding: 5px 5px;
+    margin-right: 0px;    
+    margin-left: 0px;   
+    outline: none; 
+    border: 1px solid blue;
+}
+.search-input{
+    border-radius: 4px;
+    height: 30px;
+    border: 1px solid gray;
+    width: 40%;
+    margin-top: 25px;
+    margin-bottom: 30px;
+}
+.search-input:focus{
+    outline: none;
+    border: 1px solid paleturquoise;
+    box-shadow: 3px 3px 5px #aaaaaa;
+}
+.add-input{
+    border-radius: 4px;
+    height: 24px;
+    border: 1px solid;
+    width: 50%;
+}
+.add-input:focus{
+    outline: none;
+    border: 1px solid green;
+    box-shadow: 3px 3px 5px #aaaaaa;
+}
+
+/* Buttons */
+/* ======= */
+.submit-button{
+    border-radius: 3px;
+    padding: 5px 10px;
+    margin-left: 3px;
+    background-color: cornflowerblue;
+    color: snow;
+}
+.submit-button:hover{
+    background-color: lightseagreen;
+    box-shadow: 3px 3px 5px #aaaaaa;
+}
+.save-button{
+    padding: 8px 8px;
+    border-radius: 5px;
+    background-color: cornflowerblue;
+}
+.save-button:hover{
+    background-color: lightseagreen;
+    color: white;
+}
+.load-button{
+    padding: 8px 8px;
+    border-radius: 5px;
+    background-color: cornflowerblue;
+}
+.load-button:hover{
+    background-color: lightseagreen;
+    color: white;
+}
+
+/* right click context-menu */
+/* ========================== */
+#context-menu{
+    position: fixed;
+    z-index: 10000;
+    width: 150px;
+    background-color: navy;
+    border-radius: 5px;    
+    transform: scale(0);
+    transform-origin: top left;
+}
+#context-menu.visible{    
+    transform: scale(1);
+    transition: transform 300ms ease-in-out;
+}
+#context-menu .item{
+    padding: 8px 10px;
+    font-size: 15px;
+    color: white;
+    cursor: pointer;
+    border-radius: inherit;
+}
+#context-menu .item:hover{
+    background:lightskyblue
+}
+
+/* Loader */
+/* ========= */
+.hide-loader{
+    display: none;    
+}
+.show-loader{
+    display: block;
+}
+.loader {
+    position:absolute;    
+    width: 80px;
+    height: 80px;    
+  }
+  .loader div {
+    box-sizing: border-box;
+    display: block;
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    margin: 8px;
+    border: 8px solid palegreen;
+    border-radius: 50%;
+    animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    border-color: palegreen transparent transparent transparent;
+  }
+  .loader div:nth-child(1) {
+    animation-delay: -0.45s;
+  }
+  .loader div:nth-child(2) {
+    animation-delay: -0.3s;
+  }
+  .loader div:nth-child(3) {
+    animation-delay: -0.15s;
+  }
+  @keyframes lds-ring {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+/* ======================
+   == Regular Classes ===
+   =====================*/
+
+/* every task has this class */
+.task{
+    color: black;
+    text-align: left;
+    list-style-type:decimal;    
+    margin-right: 8%;
+    padding: 7px 7px;
+    border: 1px solid black;
+}
+
+/* Section Topic class */
+.topic{
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-family: sans-serif,'Segoe UI', Tahoma, Geneva, Verdana ;
+    color: black;
+}
+
+/* error label class */
+.error{
+    color: white;
+    background-color: red;    
+    text-align: center;
+    font-size: 14px;
+    padding: 10px 100px 10px 100px;
+    margin-bottom: 10px;      
+}
+
+/* notification label class (inside #error-label) */
+.notification{
+    color: white;
+    background-color:limegreen;
+    width: 20%;
+    text-align: center;
+    font-size: 14px;
+    padding: 10px 100px 10px 100px;
+    margin-bottom: 10px;   
+}
+
+/* For error label */
+.hidden{
+    visibility: hidden;
+    opacity: 0;    
+}
+.visible{
+    visibility: visible;
+    opacity: 1;
+    transition: visibility 0s linear 0s, opacity 600ms;
+}
+
+/* Selected task */
+.selected{
+    border: 3px solid royalblue;
+    background-color: #ecf7f7;
+}
+
+
+  

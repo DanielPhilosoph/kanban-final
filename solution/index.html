@@ -6,8 +6,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="./index.js" defer></script>
     <link rel="stylesheet" href="./styles.css" />
-    <title>Tasks manager</title>
+    <title>Tasks manager </title>
 </head>
 <body>
+    <div class="head-div">
+        <header id="page-title">
+            Task Manager
+        </header> 
+        <div class="search_div">
+            <input placeholder="Search..." id="search" class="search-input">               
+            <button class="save-button" id="save-btn">Save</button> 
+            <button class="load-button" id="load-btn">Load</button>  
+            <br>      
+            <label id="error-label" class="error hidden"></label>
+        </div>        
+    </div> 
+    <div class="main-div">        
+        <div class="section-div" data-section="to-do">
+            <h2 class="topic">To-Do</h2>
+            <div class="input-div">                
+                <input type="text" id="add-to-do-task" class="add-input">
+                <button type="button" id="submit-add-to-do" class="submit-button">Add Task</button>
+            </div>
+            <div id="div-to-do-tasks" data-section="todo">
+            </div>                     
+            <br>
+        </div>
+        <div class="section-div" data-section="in-progress">
+            <h2 class="topic">In Progress</h2>
+            <div class="input-div">
+                <input type="text" id="add-in-progress-task" class="add-input">
+                <button type="button" id="submit-add-in-progress" class="submit-button">Add Task</button>
+            </div>
+            <div id="div-in-progress-tasks" data-section="in-progress">            
+            </div> 
+            <br>    
+        </div>
+        <div class="section-div" data-section="done">
+            <h2 class="topic">Done!</h2>
+            <div class="input-div">
+                <input type="text" id="add-done-task" class="add-input">
+                <button type="button" id="submit-add-done" class="submit-button">Add Task</button>
+            </div>            
+            <div id="div-done-tasks" data-section="done">            
+            </div> 
+            <br>    
+        </div>
+    </div>
+    <div id="context-menu">        
+        <div class="item" data-type="Delete">Delete task</div>
+    </div>       
 </body>
 </html>
