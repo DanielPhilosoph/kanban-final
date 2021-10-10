@@ -400,26 +400,48 @@ function getTextFromInputId(id){
 }
 
 // refresh page according to local storage filtered by the query (search) text
-function reloadTasksPage(query){    
-    let todoDiv = document.querySelector("#div-to-do-tasks");
-    todoDiv.innerHTML = "";     
-    let todo_Ul = createTaskList(query, "todo", ["to-do-tasks"]);
-    todoDiv.append(todo_Ul);
+function reloadTasksPage(query){ 
+    let divArr = ["#div-to-do-tasks", "#div-in-progress-tasks", "#div-done-tasks"];
+    for(let divId of divArr){
+        let div = document.querySelector(divId);
+        div.innerHTML = '';
+        div.append(createTaskList(query, div.dataset.section, [div.dataset.section + "-tasks"]));         
+    }  
+    resetAddInputs();    
+}
 
-    let inProgressDiv = document.querySelector("#div-in-progress-tasks");
-    inProgressDiv.innerHTML = "";
-    let inProgress_Ul = createTaskList(query, "in-progress", ["in-progress-tasks"]);
-    inProgressDiv.append(inProgress_Ul);
-
-    let doneDiv = document.querySelector("#div-done-tasks");
-    doneDiv.innerHTML = "";
-    let done_Ul = createTaskList(query, "done", ["done-tasks"]);
-    doneDiv.append(done_Ul);
-    
+function resetAddInputs(){
     // Reset all add inputs
     document.querySelector("#add-to-do-task").value = "";
     document.querySelector("#add-in-progress-task").value = "";
     document.querySelector("#add-done-task").value = "";        
+}
+
+function getDivEvents(){
+    return {
+        'drop': dragDrop,
+        'dragenter': dragEnter,
+        'dragleave': dragLeave
+    };       
+}
+
+function getTaskAttributs(key, counter){
+    return {
+        "data-section": key,                 
+        'tabIndex': counter,
+        'draggable': true                
+    };  
+}
+
+function getTaskEventListeners(){
+    return {
+        'keydown': (event) => {onTaskKeyDownHandler(event)},
+        'contextmenu': (event) => {contextMenuTask(event)},
+        'click': (event) => {onTaskClickHandler(event)},
+        'dblclick': (event) => {onTaskDBClickHandler(event)},
+        'dragstart': (event) => {onTaskDragStart(event)},
+        'dragend': (event) => {onTaskDragEnd(event)}                
+    }; 
 }
 
 // ===> Creating UL element from key in "task" <===
@@ -428,28 +450,13 @@ function createTaskList(filter, key, css_classes){
     const tasksObject = getLocalStorageTasks();
     let ul_Elements_Array = [];     
     let counter = 0; 
-    let div_Listeners = {
-        'drop': dragDrop,
-        'dragenter': dragEnter,
-        'dragleave': dragLeave
-    };       
+    let div_Listeners = getDivEvents();
     for(let task of tasksObject[key]){         
         let taskLowerCase = task.toLowerCase();
         let filterLowerCase =  filter.toLowerCase();
         if(taskLowerCase.includes(filterLowerCase)){              
-            let attributs = {
-                "data-section": key,                 
-                'tabIndex': counter,
-                'draggable': true                
-            };  
-            let task_Listeners = {
-                'keydown': (event) => {onTaskKeyDownHandler(event)},
-                'contextmenu': (event) => {contextMenuTask(event)},
-                'click': (event) => {onTaskClickHandler(event)},
-                'dblclick': (event) => {onTaskDBClickHandler(event)},
-                'dragstart': (event) => {onTaskDragStart(event)},
-                'dragend': (event) => {onTaskDragEnd(event)}                
-            }; 
+            let attributs = getTaskAttributs(key, counter);
+            let task_Listeners = getTaskEventListeners();
             ul_Elements_Array.push(createElement('div', [], ["droppable-div"], {"data-section": key, 'data-drop_div': counter}, div_Listeners));                                  
             ul_Elements_Array.push(createElement("li", [task], ["task"], attributs, task_Listeners));
             //reset before next Items
@@ -462,7 +469,7 @@ function createTaskList(filter, key, css_classes){
 }
 
 // ===> returns JSON of tasks <===
-function getLocalStorageTasks(){
+function getLocalStorageTasks(){     
     return JSON.parse(localStorage.getItem('tasks'));
 }
 
@@ -473,28 +480,29 @@ function displayError(visible, text = "", type = "error"){
 
     if(errorLabel.classList.contains("error")){
         if(type != "error"){
-            errorLabel.classList.remove("error");
-            errorLabel.classList.add("notification");
+            applyErrorLabelClass("notification", "error");            
         }    
     }
     else {
         if(type == "error"){
-            errorLabel.classList.remove("notification");
-            errorLabel.classList.add("error");
+            applyErrorLabelClass("error", "notification");            
         }    
     }        
     if(errorLabel.classList.contains("hidden")){
         if(visible){
-            errorLabel.classList.remove("hidden");
-            errorLabel.classList.add("visible");
+            applyErrorLabelClass("visible", "hidden");            
         }    
     }
     else {
         if(!visible){
-            errorLabel.classList.remove("visible");
-            errorLabel.classList.add("hidden");
+            applyErrorLabelClass("hidden","visible");            
         }    
     }    
+}
+
+function applyErrorLabelClass(applyClass, removeClass){
+    errorLabel.classList.remove(removeClass);
+    errorLabel.classList.add(applyClass);
 }
 
 // Deletes selected task from tasks
@@ -536,9 +544,7 @@ function changeSelectedTask(target){
     
         if(target !== ""){
             if ( SelectedTask != undefined) {
-                if (SelectedTask.classList.contains("selected")) {
-                    SelectedTask.classList.remove("selected");
-                }
+                applySelectedClass(SelectedTask);
             }    
             SelectedTask = target;
             SelectedTaskName = SelectedTask.textContent;
@@ -547,8 +553,12 @@ function changeSelectedTask(target){
             }
         }
         else{
-            if (SelectedTask.classList.contains("selected")) {
-                SelectedTask.classList.remove("selected");
-            }
+            applySelectedClass(SelectedTask);
         }    
+}
+
+function applySelectedClass(SelectedTask, containsBoolian){
+    if (SelectedTask.classList.contains("selected")) {
+        SelectedTask.classList.remove("selected");
+    }
 }
