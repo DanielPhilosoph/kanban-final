@@ -5,6 +5,7 @@ const KEY_1 = 49;
 const KEY_2 = 50;
 const KEY_3 = 51;
 const BACKSPCE_KEYCODE = 8;
+const API_HTTP = "http://json-bins.herokuapp.com/bin/614af3924021ac0e6c080cb3";
 
 //==========================
 // ===== Global Vars =======
@@ -47,7 +48,7 @@ if(myTasks === null || myTasks === undefined){
 reloadTasksPage(searchInput.value);
 
 // ==================================
-// ====== Event Function ============
+// ====== Event Functions ===========
 // ==================================
 
 // Click handler of document - if not on element, remove mark
@@ -99,33 +100,14 @@ function onKeyUpHandler(event){
 
 function onTaskKeyDownHandler(event){        
     pressed.add(event.keyCode);
-    let arrayOfKeys = [KEY_1, KEY_2, KEY_3];    
-    if(event === undefined){
-        return;
-    }
+    let arrayOfKeys = [KEY_1, KEY_2, KEY_3];     
     // Check key down
     for (let key = 0; key < arrayOfKeys.length; key++) {
         if(event.altKey && pressed.has(arrayOfKeys[key])){
-            event.preventDefault();
-
-            let target = event.target;             
-            const taskManagerDataJSON = getLocalStorageTasks(); 
-            const sectionArray = taskManagerDataJSON[target.dataset.section];
-            let index = sectionArray.indexOf(target.textContent);
-
-            //Deletes selected task and update
-            sectionArray.splice(index, 1);
-            localStorage.setItem('tasks', JSON.stringify(taskManagerDataJSON));
-            //Add to the selected section
-            if(arrayOfKeys[key] === KEY_1){
-                AddToSection(target.textContent, 'todo'); 
-            }
-            else if(arrayOfKeys[key] === KEY_2){
-                AddToSection(target.textContent, 'in-progress'); 
-            }
-            else if(arrayOfKeys[key] === KEY_3){
-                AddToSection(target.textContent, 'done'); 
-            }  
+            event.preventDefault();            
+            let target = event.target;
+            deleteTask(target.textContent);
+            addTaskByKey(target, key, arrayOfKeys);                                               
             reloadTasksPage(searchInput.textContent);                      
         }
         
@@ -137,6 +119,15 @@ function onTaskKeyDownHandler(event){
         }         
     }   
     pressed.clear();
+}
+
+function addTaskByKey(target, key, arrayOfKeys){
+    let arrayOfSections = ['todo', 'in-progress', 'done'];  
+    for(let numberKey of arrayOfKeys){                
+        if(numberKey === arrayOfKeys[key]){                    
+            AddToSection(target.textContent, arrayOfSections[key]);
+        }
+    }  
 }
 
 function onTaskClickHandler(event){    
@@ -187,27 +178,18 @@ function onTaskBlur(event){
 // ===> On right click <===
 function contextMenuTask(event){
     event.preventDefault();          
-
-    changeSelectedTask(event.target);
-    
-    const { clientX: mouseX, clientY: mouseY } = event;
-    
-    contextMenu.style.top = `${mouseY}px`;
-    contextMenu.style.left = `${mouseX}px`;
-    
+    changeSelectedTask(event.target);    
+    mouseElementPosition(contextMenu, event);    
     contextMenu.classList.add("visible");
-
     document.addEventListener("click", OnContextMenuClick);
 
 }
 
 function OnContextMenuClick(event){    
-    if (event.target.offsetParent == contextMenu){ 
-        if (event.target.dataset.type === "Delete" ){                        
-            if(confirm("Are you sure you want to delete " + SelectedTaskName + " task?")){
-                deleteTask();
-                reloadTasksPage(searchInput.value);  
-            }                  
+    if (event.target.offsetParent == contextMenu && event.target.dataset.type === "Delete"){                              
+        if(confirm("Are you sure you want to delete " + SelectedTaskName + " task?")){
+            deleteTask();
+            reloadTasksPage(searchInput.value);                                
         }               
     }
     contextMenu.classList.remove("visible");
@@ -223,24 +205,25 @@ function dragLeave(event){
 }
 
 function dragDrop(event){
-    event.target.classList.remove('droppable-hovered');
     let target = event.target;
-    const taskManagerDataJSON = getLocalStorageTasks(); 
-    const sectionArray = taskManagerDataJSON[SelectedTask.dataset.section];
+    target.classList.remove('droppable-hovered'); 
+    const sectionArray = getLocalStorageTasks()[SelectedTask.dataset.section];
     let index = sectionArray.indexOf(SelectedTaskName);
-    // Remove from previous sction
-    sectionArray.splice(index, 1);
-    localStorage.setItem('tasks', JSON.stringify(taskManagerDataJSON));
+    deleteTask();      
     //Add to the new one in a specific index
-    let indexDrop = parseInt(target.dataset.drop_div);    
+    let indexDrop = parseInt(target.dataset.drop_div);
+    placeTaskAfterDrag(indexDrop, target, index);         
+    reloadTasksPage(searchInput.textContent); 
+    displayError(false);       
+}
+
+function placeTaskAfterDrag(indexDrop, target, index){    
     if(target.dataset.section === SelectedTask.dataset.section && indexDrop !== 0 && index < indexDrop){
         AddToSection(SelectedTask.textContent, target.dataset.section, indexDrop - 1);
     }
     else{
         AddToSection(SelectedTask.textContent, target.dataset.section, target.dataset.drop_div);
     }
-    reloadTasksPage(searchInput.textContent); 
-    displayError(false);       
 }
 
 function onTaskDragStart(event){
@@ -260,23 +243,20 @@ function onTaskDragOver(event){
 
 function onMouseMove(event){
     let loader = document.querySelector(".loader");
-    const { clientX: mouseX, clientY: mouseY } = event;
-    
-    loader.style.top = `${mouseY}px`;
-    loader.style.left = `${mouseX}px`;
-    
+    mouseElementPosition(loader, event);    
 }
 
-// ==================================
-// ====== Server Function ============
-// ==================================
+// ===================================
+// ====== Server Functions ===========
+// ===================================
+
 async function SaveTasksOnServer(){
     const taskManagerDataString = localStorage.getItem('tasks');   
     
     loaderDisplay(true); 
     document.addEventListener('mousemove', onMouseMove);    
 
-    const respons = await fetch("http://json-bins.herokuapp.com/bin/614af3924021ac0e6c080cb3", {
+    const response = await fetch(API_HTTP, {
         method: "PUT", 
         headers: {        
             "Accept": "application/json",
@@ -288,10 +268,7 @@ async function SaveTasksOnServer(){
     document.removeEventListener('mousemove', onMouseMove); 
     loaderDisplay(false);   
 
-    if(!respons.ok){
-        displayError(true, "Server Error: " + respons.status + " " + respons.statusText);   
-    }
-    else{
+    if(responseValidation(response, "Server")){       
         displayError(true, "Tasks information was saved successfully!", "notification");
     }
     
@@ -302,7 +279,7 @@ async function getServerTasks(){
     loaderDisplay(true); 
     document.addEventListener('mousemove', onMouseMove);        
     
-    const response = await fetch( "http://json-bins.herokuapp.com/bin/614af3924021ac0e6c080cb3", {
+    const response = await fetch(API_HTTP, {
         method: "GET", 
         headers: {
             'Content-Type': 'application/json',           
@@ -312,25 +289,62 @@ async function getServerTasks(){
     document.removeEventListener('mousemove', onMouseMove); 
     loaderDisplay(false);     
 
-    if(response != undefined && !response.ok){
-        let errorString = "Load Error! => " + response.status + " " + response.statusText;
-        displayError(true, errorString);
-    }
-    else{
+    if(responseValidation(response, "Loud")){            
         //recieve tasks from server, update local storage
         let tasksData = await response.json();             
         localStorage.clear();
-    
-
         localStorage.setItem("tasks",tasksData.tasks); 
         displayError(true, "Tasks Loaded Succesfully","notification");
     }
 }
 
+function responseValidation(response, errorText = ""){
+    if(response != undefined && !response.ok){
+        let errorString = errorText + "Error! => " + response.status + " " + response.statusText;
+        displayError(true, errorString);
+        return false;
+    }
+    return true;
+}
 
 // ==================================
-// ======  Functions ============
+// ===========  DOM  ================
 // ==================================
+
+function createElement(tagName, children = [], classes = [], attributes = {}, eventListeners = {}) {
+
+    const myElement = document.createElement(tagName);
+
+    for(const child of children){
+        myElement.append(child);
+    }
+
+    for(const cls of classes){
+        myElement.classList.add(cls);
+    }
+
+    for (const attr in attributes) {
+        myElement.setAttribute(attr, attributes[attr]);
+    }
+
+    for (const [listener, handler] of Object.entries(eventListeners)){                                     
+        myElement.addEventListener(listener, handler, true);
+    }
+
+    return myElement;    
+
+}
+
+// refresh page according to local storage filtered by the query (search) text
+function reloadTasksPage(query){ 
+    let divArr = ["#div-to-do-tasks", "#div-in-progress-tasks", "#div-done-tasks"];
+    for(let divId of divArr){
+        let div = document.querySelector(divId);
+        div.innerHTML = '';
+        div.append(createTaskList(query, div.dataset.section, [div.dataset.section + "-tasks"]));         
+    }  
+    resetAddInputs();    
+}
 
 function loaderDisplay(display){
     // Creating:
@@ -342,10 +356,7 @@ function loaderDisplay(display){
             divArray.push(createElement("div"));   
         }
         let loaderDiv = createElement("div", divArray, ["loader"]);
-        const { clientX: mouseX, clientY: mouseY } = window.event;
-    
-        loaderDiv.style.top = `${mouseY}px`;
-        loaderDiv.style.left = `${mouseX}px`;        
+        mouseElementPosition(loaderDiv, window.event)             
         body.append(loaderDiv);
     }
     else{
@@ -354,23 +365,6 @@ function loaderDisplay(display){
     }    
 }
 
-async function LoadPageFromServer() {
-    await getServerTasks();
-    reloadTasksPage(searchInput.value);  
-} 
-
-function ResetLocalStorage() {
-    const tasks = {
-        "todo": [],
-        "in-progress": [],
-        "done": [],        
-    };
-    localStorage.setItem('tasks', JSON.stringify(tasks)); 
-}
-
-/* 
-*   ===> Adding task to LocalStorage <===
-*/
 function AddToSection(taskName, key, index = 0 ,showError = false){
     const tasksObject = getLocalStorageTasks();    
     const pSectionTasksArray = tasksObject[key];    
@@ -390,7 +384,6 @@ function AddToSection(taskName, key, index = 0 ,showError = false){
     displayError(showError,"Task was added succesfully","notification");    
 }
 
-// ===> gets id of input - return its value (as string) <===
 function getTextFromInputId(id){
     let input = document.querySelector("#" + id);         
     let inputValue = input.value;
@@ -399,23 +392,22 @@ function getTextFromInputId(id){
     return inputValue;
 }
 
-// refresh page according to local storage filtered by the query (search) text
-function reloadTasksPage(query){ 
-    let divArr = ["#div-to-do-tasks", "#div-in-progress-tasks", "#div-done-tasks"];
-    for(let divId of divArr){
-        let div = document.querySelector(divId);
-        div.innerHTML = '';
-        div.append(createTaskList(query, div.dataset.section, [div.dataset.section + "-tasks"]));         
-    }  
-    resetAddInputs();    
-}
-
 function resetAddInputs(){
     // Reset all add inputs
     document.querySelector("#add-to-do-task").value = "";
     document.querySelector("#add-in-progress-task").value = "";
     document.querySelector("#add-done-task").value = "";        
 }
+
+function mouseElementPosition(elementDOM, event){
+    const { clientX: mouseX, clientY: mouseY } = event;    
+    elementDOM.style.top = `${mouseY}px`;
+    elementDOM.style.left = `${mouseX}px`;
+}
+
+// ==================================
+// ==========  Tasks ================
+// ==================================
 
 function getDivEvents(){
     return {
@@ -444,34 +436,82 @@ function getTaskEventListeners(){
     }; 
 }
 
+function changeSelectedTask(target){
+    
+    if(target !== ""){
+        if ( SelectedTask != undefined) {
+            applySelectedClass(SelectedTask);
+        }    
+        SelectedTask = target;
+        SelectedTaskName = SelectedTask.textContent;
+        if (!SelectedTask.classList.contains("selected")) {
+            SelectedTask.classList.add("selected");
+        }
+    }
+    else{
+        applySelectedClass(SelectedTask);
+    }    
+}
+
+function applySelectedClass(SelectedTask, containsBoolian){
+    if (SelectedTask.classList.contains("selected")) {
+        SelectedTask.classList.remove("selected");
+    }
+}
+
 // ===> Creating UL element from key in "task" <===
 //filter case insensative
 function createTaskList(filter, key, css_classes){
     const tasksObject = getLocalStorageTasks();
     let ul_Elements_Array = [];     
-    let counter = 0; 
-    let div_Listeners = getDivEvents();
+    let counter = 0;     
+    let filterLowerCase =  filter.toLowerCase();
     for(let task of tasksObject[key]){         
-        let taskLowerCase = task.toLowerCase();
-        let filterLowerCase =  filter.toLowerCase();
-        if(taskLowerCase.includes(filterLowerCase)){              
-            let attributs = getTaskAttributs(key, counter);
-            let task_Listeners = getTaskEventListeners();
-            ul_Elements_Array.push(createElement('div', [], ["droppable-div"], {"data-section": key, 'data-drop_div': counter}, div_Listeners));                                  
-            ul_Elements_Array.push(createElement("li", [task], ["task"], attributs, task_Listeners));
+        let taskLowerCase = task.toLowerCase();        
+        if(taskLowerCase.includes(filterLowerCase)){                                      
+            ul_Elements_Array.push(createElement('div', [], ["droppable-div"], {"data-section": key, 'data-drop_div': counter}, getDivEvents()));                                  
+            ul_Elements_Array.push(createElement("li", [task], ["task"], getTaskAttributs(key, counter), getTaskEventListeners()));
             //reset before next Items
             counter++;             
         }        
     }
-    ul_Elements_Array.push(createElement('div', [], ["droppable-div"], {"data-section": key, 'data-drop_div': counter}, div_Listeners)); 
+    ul_Elements_Array.push(createElement('div', [], ["droppable-div"], {"data-section": key, 'data-drop_div': counter}, getDivEvents())); 
     
     return createElement("ul", ul_Elements_Array, [...css_classes], {"data-section": key});  
 }
+
+// Deletes selected task from tasks
+function deleteTask(TasktoDelete = SelectedTaskName){
+    const tasksObject = getLocalStorageTasks();
+        
+    let taskIndex = tasksObject[SelectedTask.dataset.section].indexOf(TasktoDelete);  
+    if(taskIndex !== -1){
+        tasksObject[SelectedTask.dataset.section].splice(taskIndex, 1);
+    }              
+    localStorage.setItem('tasks', JSON.stringify(tasksObject));   
+}
+
+// ==================================
+// ======  Local Storage ============
+// ==================================
 
 // ===> returns JSON of tasks <===
 function getLocalStorageTasks(){     
     return JSON.parse(localStorage.getItem('tasks'));
 }
+
+function ResetLocalStorage() {
+    const tasks = {
+        "todo": [],
+        "in-progress": [],
+        "done": [],        
+    };
+    localStorage.setItem('tasks', JSON.stringify(tasks)); 
+}
+
+// ==================================
+// ====  Errors and errorLabel ======
+// ==================================
 
 // Display an error on screen
 function displayError(visible, text = "", type = "error"){
@@ -505,60 +545,28 @@ function applyErrorLabelClass(applyClass, removeClass){
     errorLabel.classList.add(applyClass);
 }
 
-// Deletes selected task from tasks
-function deleteTask(){
-    const tasksObject = getLocalStorageTasks();
-        
-    let taskIndex = tasksObject[SelectedTask.dataset.section].indexOf(SelectedTaskName);  
-    if(taskIndex !== -1){
-        tasksObject[SelectedTask.dataset.section].splice(taskIndex, 1);
-    }              
-    localStorage.setItem('tasks', JSON.stringify(tasksObject));   
-}
 
-function createElement(tagName, children = [], classes = [], attributes = {}, eventListeners = {}) {
 
-    const myElement = document.createElement(tagName);
 
-    for(const child of children){
-        myElement.append(child);
-    }
 
-    for(const cls of classes){
-        myElement.classList.add(cls);
-    }
 
-    for (const attr in attributes) {
-        myElement.setAttribute(attr, attributes[attr]);
-    }
 
-    for (const [listener, handler] of Object.entries(eventListeners)){                                     
-        myElement.addEventListener(listener, handler, true);
-    }
 
-    return myElement;    
 
-}
 
-function changeSelectedTask(target){
-    
-        if(target !== ""){
-            if ( SelectedTask != undefined) {
-                applySelectedClass(SelectedTask);
-            }    
-            SelectedTask = target;
-            SelectedTaskName = SelectedTask.textContent;
-            if (!SelectedTask.classList.contains("selected")) {
-                SelectedTask.classList.add("selected");
-            }
-        }
-        else{
-            applySelectedClass(SelectedTask);
-        }    
-}
 
-function applySelectedClass(SelectedTask, containsBoolian){
-    if (SelectedTask.classList.contains("selected")) {
-        SelectedTask.classList.remove("selected");
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
